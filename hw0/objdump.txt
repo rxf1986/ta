@@ -1,0 +1,24 @@
+  You will see that it has several segments, names of functions and variables in your program correspond labels with addresses or values. And the guts of everything is chunks of stu within segments.
+While you are looking through the objdump try and think about the following questions and put the swers in the le objdump.txt.
+
+
+What le format is used for this binary? And what architecture is it compiled for?
+
+objdump -f main:
+
+file format elf64-x86-64
+architecture: i386:x86-64, flags 0x00000112:
+EXEC_P, HAS_SYMS, D_PAGED
+start address 0x00000000004004c0
+
+
+ What are the names of segments you find?  .text .bss .interp and so on (objdump -s main)
+ What segment contains wc (the function) and what is it's address? (hint: objdump -w wc | grep wc)  .text && 00000000004005a4 (objdump -d main > 11) 
+ What about main? .text && 0000000000400650
+ How do these correspond to what you observed in gdb when you were looking at the loaded,
+executing program?  
+ Do you see the stack segment anywhere? What about the heap? Explain.
+
+ 
+
+ 
