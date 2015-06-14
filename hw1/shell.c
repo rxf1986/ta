@@ -7,15 +7,20 @@
 #include <termios.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dirent.h>
 
 #define FALSE 0
 #define TRUE 1
 #define INPUT_STRING_SIZE 80
+#define MAX_PATH_SIZE 80
 
 #include "io.h"
 #include "parse.h"
 #include "process.h"
 #include "shell.h"
+
+
+char buffer[MAX_PATH_SIZE];
 
 int cmd_quit(tok_t arg[]) {
   printf("Bye\n");
@@ -24,8 +29,8 @@ int cmd_quit(tok_t arg[]) {
 }
 
 int cmd_help(tok_t arg[]);
-
-
+int cmd_cd(tok_t arg[]);
+int cmd_ls(tok_t arg[]);
 /* Command Lookup table */
 typedef int cmd_fun_t (tok_t args[]); /* cmd functions take token array and return int */
 typedef struct fun_desc {
@@ -37,6 +42,8 @@ typedef struct fun_desc {
 fun_desc_t cmd_table[] = {
   {cmd_help, "?", "show this help menu"},
   {cmd_quit, "quit", "quit the command shell"},
+  {cmd_cd, "cd", "change to a specific dir"},
+  {cmd_ls, "ls", "list the dirent"}
 };
 
 int cmd_help(tok_t arg[]) {
@@ -47,6 +54,46 @@ int cmd_help(tok_t arg[]) {
   return 1;
 }
 
+int cmd_cd(tok_t arg[]) {
+
+  if(chdir(arg[0]) == 0) {
+  //int fd = open(arg[0], O_RDONLY);
+  //fchdir(fd);
+    getcwd(buffer, MAX_PATH_SIZE);
+    printf("the current dir is %s\n", buffer);
+  }
+  else {
+    printf("change dir failedi,please check the input path\n");
+    return 0;
+  }
+  return 1;
+}
+ 
+int cmd_ls(tok_t arg[]) {
+  DIR * pdir;
+  struct dirent *dirent;
+  char d_name[20];
+
+  if(arg[0] == NULL) {
+    d_name[0]='.';
+    d_name[1]='\0';
+    pdir = opendir(d_name);
+  }
+  else {
+    pdir = opendir(arg[0]);
+  }
+
+  if(pdir == NULL) {
+    printf("error opendir %s\n", arg[0]);
+    return -1;
+  }
+
+  while((dirent = readdir(pdir)) != NULL) {
+    printf(" %s\n", dirent->d_name);
+  }
+   closedir(pdir);   
+   return 1;
+}
 int lookup(char cmd[]) {
   int i;
   for (i=0; i < (sizeof(cmd_table)/sizeof(fun_desc_t)); i++) {
@@ -117,7 +164,12 @@ int shell (int argc, char *argv[]) {
   printf("%s running as PID %d under %d\n",argv[0],pid,ppid);
 
   lineNum=0;
-  fprintf(stdout, "%d: ", lineNum);
+  if(getcwd(buffer, MAX_PATH_SIZE) < 0) {
+    printf("error get cwd \n");
+    return -1;
+  }
+  fprintf(stdout, "%d:%s ", lineNum, buffer);
+
   while ((s = freadln(stdin))){
     t = getToks(s); /* break the line into tokens */
     fundex = lookup(t[0]); /* Is first token a shell literal */
@@ -125,7 +177,7 @@ int shell (int argc, char *argv[]) {
     else {
       fprintf(stdout, "This shell only supports built-ins. Replace this to run programs as commands.\n");
     }
-    fprintf(stdout, "%d: ", lineNum);
+    fprintf(stdout, "%d:%s ", lineNum, buffer);
   }
   return 0;
 }
