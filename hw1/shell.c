@@ -173,11 +173,31 @@ int shell (int argc, char *argv[]) {
   while ((s = freadln(stdin))){
     t = getToks(s); /* break the line into tokens */
     fundex = lookup(t[0]); /* Is first token a shell literal */
-    if(fundex >= 0) cmd_table[fundex].fun(&t[1]);
+    if(fundex >= 0) {
+      printf("enter if\n");
+     cmd_table[fundex].fun(&t[1]);
+    }
     else {
-      fprintf(stdout, "This shell only supports built-ins. Replace this to run programs as commands.\n");
+      printf("enter else\n");
+      cpid = fork();
+      if(cpid == 0) {
+         printf("enter cpid=0 child\n");
+         //if(execl(t[0], t[0], t[1], (char *)0) == -1) {
+         if(execv(t[0], t) == -1) {
+            printf("error exec %s\n", t[0]);
+            printf(stdout, "This shell only supports built-ins. Replace this to run programs as commands.\n");
+            exit(1);
+         }
+         
+         //exit(0);
+      }
+      else if(cpid > 0) {
+         waitpid(cpid, NULL, 0);
+      }
+      else printf("fork error\n");
     }
     fprintf(stdout, "%d:%s ", lineNum, buffer);
-  }
+ 
+    }
   return 0;
 }
