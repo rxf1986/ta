@@ -8,11 +8,12 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <pwd.h>
 
 #define FALSE 0
 #define TRUE 1
 #define INPUT_STRING_SIZE 80
-#define MAX_PATH_SIZE 80
+#define MAX_PATH_SIZE 200
 
 #include "io.h"
 #include "parse.h"
@@ -158,6 +159,7 @@ int shell (int argc, char *argv[]) {
   pid_t pid = getpid();		/* get current processes PID */
   pid_t ppid = getppid();	/* get parents PID */
   pid_t cpid, tcpid, cpgid;
+  char env[MAX_PATH_SIZE], *pathenv;
 
   init_shell();
 
@@ -181,8 +183,13 @@ int shell (int argc, char *argv[]) {
       printf("enter else\n");
       cpid = fork();
       if(cpid == 0) {
-         printf("enter cpid=0 child\n");
-         //if(execl(t[0], t[0], t[1], (char *)0) == -1) {
+         memset(env,0,sizeof(env));
+         pathenv = getenv("PATH");
+         strcat(env, pathenv);
+         //strcat(env, getpwuid(getuid())->pw_dir);
+         strcat(env, ":/pintos/code/ta/hw1");
+         setenv("PATH",env,1);
+
          if(execv(t[0], t) == -1) {
             printf("error exec %s\n", t[0]);
             printf(stdout, "This shell only supports built-ins. Replace this to run programs as commands.\n");
